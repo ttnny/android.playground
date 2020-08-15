@@ -1,60 +1,99 @@
 package ttnny.dev.android.androidconcurrency.uithread
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
+import androidx.navigation.Navigation
+import kotlinx.android.synthetic.main.ui_thread_demo_fragment.*
+import timber.log.Timber
 import ttnny.dev.android.androidconcurrency.R
+import ttnny.dev.android.androidconcurrency.databinding.UiThreadDemoFragmentBinding
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [UIThreadDemoFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class UIThreadDemoFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+
+    companion object {
+        const val TAG = "UIThreadDemo"
+    }
+
+    private val mUIHandler = Handler(Looper.myLooper()!!)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+        logThreadInfo("onCreate()")
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.ui_thread_demo_fragment, container, false)
+        val binding: UiThreadDemoFragmentBinding =
+            DataBindingUtil.inflate(inflater, R.layout.ui_thread_demo_fragment, container, false)
+
+        binding.callbackCheckButton.setOnClickListener {
+            logThreadInfo("button callback")
+        }
+
+        binding.countIterationsButton.setOnClickListener {
+            countIterations()
+        }
+
+        binding.customHandlerDemoButton.setOnClickListener(
+            Navigation.createNavigateOnClickListener(R.id.action_UIThreadDemoFragment_to_customHandlerDemoFragment)
+        )
+
+        return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment UIThreadDemoFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            UIThreadDemoFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        logThreadInfo("onViewCreated()")
     }
+
+    override fun onStart() {
+        super.onStart()
+        logThreadInfo("onStart()")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        logThreadInfo("onResume()")
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        logThreadInfo("onDestroyView()")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        logThreadInfo("onDestroy()")
+    }
+
+    private fun countIterations() {
+        Thread {
+            val startTimestamp = System.currentTimeMillis()
+            val endTimestamp = startTimestamp + 5 * 1000
+
+            var iterationsCount = 0
+            while (System.currentTimeMillis() <= endTimestamp) {
+                iterationsCount++
+            }
+
+            mUIHandler.post(Thread {
+                Timber.d("UIHandler: Current thread: ${Thread.currentThread().name}")
+                countIterationsButton.text = "$iterationsCount"
+            })
+        }.start()
+    }
+
+    private fun logThreadInfo(eventName: String) {
+        Timber.d("Event\n $eventName; thread name: ${Thread.currentThread().name}; thread ID: ${Thread.currentThread().id}")
+    }
+
 }
