@@ -17,6 +17,7 @@ import com.techyourchance.multithreading.R;
 import com.techyourchance.multithreading.common.BaseFragment;
 
 import java.math.BigInteger;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,17 +30,20 @@ public class Exercise4Fragment extends BaseFragment {
         return new Exercise4Fragment();
     }
 
-    private Handler mUiHandler = new Handler(Looper.getMainLooper());
+    private final static int MAX_TIMEOUT_MS = DefaultConfiguration.DEFAULT_FACTORIAL_TIMEOUT_MS;
 
+    private final Handler mUiHandler = new Handler(Looper.getMainLooper());
+
+    // UI thread
     private EditText mEdtArgument;
     private EditText mEdtTimeout;
     private Button mBtnStartWork;
     private TextView mTxtResult;
 
-    private int mNumberOfThreads;
-    private ComputationRange[] mThreadsComputationRanges;
-    private BigInteger[] mThreadsComputationResults;
-    private int mNumOfFinishedThreads;
+    private int mNumberOfThreads; // threadsafe
+    private ComputationRange[] mThreadsComputationRanges; // threadsafe
+    private volatile BigInteger[] mThreadsComputationResults; // threadsafe (with volatile)
+    private AtomicInteger mNumOfFinishedThreads; // threadsafe (with atomic)
 
     private long mComputationTimeoutTime;
 
@@ -88,8 +92,6 @@ public class Exercise4Fragment extends BaseFragment {
 
     private int getTimeout() {
         int timeout;
-        int MAX_TIMEOUT_MS = DefaultConfiguration.DEFAULT_FACTORIAL_TIMEOUT_MS;
-
         if (mEdtTimeout.getText().toString().isEmpty()) {
             timeout = MAX_TIMEOUT_MS;
         } else {
@@ -98,7 +100,6 @@ public class Exercise4Fragment extends BaseFragment {
                 timeout = MAX_TIMEOUT_MS;
             }
         }
-
         return timeout;
     }
 
@@ -115,7 +116,7 @@ public class Exercise4Fragment extends BaseFragment {
         mNumberOfThreads = factorialArgument < 20
                 ? 1 : Runtime.getRuntime().availableProcessors();
 
-        mNumOfFinishedThreads = 0;
+        mNumOfFinishedThreads.set(0);
 
         mAbortComputation = false;
 
@@ -161,7 +162,7 @@ public class Exercise4Fragment extends BaseFragment {
                     product = product.multiply(new BigInteger(String.valueOf(num)));
                 }
                 mThreadsComputationResults[threadIndex] = product;
-                mNumOfFinishedThreads++;
+                mNumOfFinishedThreads.incrementAndGet();
             }).start();
 
         }
@@ -170,9 +171,9 @@ public class Exercise4Fragment extends BaseFragment {
     @WorkerThread
     private void waitForThreadsResultsOrTimeoutOrAbort() {
         while (true) {
-            if (mNumOfFinishedThreads == mNumberOfThreads) {
+            if (mNumOfFinishedThreads.get() == mNumberOfThreads) {
                 break;
-            } else if (mAbortComputation) {
+            } else if(mAbortComputation) {
                 break;
             } else if (isTimedOut()) {
                 break;
@@ -192,7 +193,8 @@ public class Exercise4Fragment extends BaseFragment {
 
         if (mAbortComputation) {
             resultString = "Computation aborted";
-        } else {
+        }
+        else {
             resultString = computeFinalResult().toString();
         }
 
