@@ -43,11 +43,11 @@ public class Exercise4Fragment extends BaseFragment {
     private int mNumberOfThreads; // threadsafe
     private ComputationRange[] mThreadsComputationRanges; // threadsafe
     private volatile BigInteger[] mThreadsComputationResults; // threadsafe (with volatile)
-    private AtomicInteger mNumOfFinishedThreads; // threadsafe (with atomic)
+    private final AtomicInteger mNumOfFinishedThreads = new AtomicInteger(0); // threadsafe (with atomic). no need to make it final but just a good habit to do so
 
-    private long mComputationTimeoutTime;
+    private long mComputationTimeoutTime; // safe
 
-    private boolean mAbortComputation;
+    private volatile boolean mAbortComputation; // safe (with volatile)
 
     @Nullable
     @Override
@@ -173,7 +173,7 @@ public class Exercise4Fragment extends BaseFragment {
         while (true) {
             if (mNumOfFinishedThreads.get() == mNumberOfThreads) {
                 break;
-            } else if(mAbortComputation) {
+            } else if (mAbortComputation) {
                 break;
             } else if (isTimedOut()) {
                 break;
@@ -193,8 +193,7 @@ public class Exercise4Fragment extends BaseFragment {
 
         if (mAbortComputation) {
             resultString = "Computation aborted";
-        }
-        else {
+        } else {
             resultString = computeFinalResult().toString();
         }
 
