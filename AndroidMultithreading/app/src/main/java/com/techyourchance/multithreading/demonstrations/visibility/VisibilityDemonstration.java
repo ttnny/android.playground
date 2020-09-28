@@ -1,17 +1,34 @@
 package com.techyourchance.multithreading.demonstrations.visibility;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class VisibilityDemonstration {
 
-    private static int sCount = 0;
+    private static final AtomicBoolean PRODUCER_FLAG = new AtomicBoolean(false);
+    private volatile static int sCount = 0;
 
     public static void main(String[] args) {
         new Consumer().start();
+
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
             return;
         }
+
         new Producer().start();
+
+        synchronized (PRODUCER_FLAG) {
+            while (!PRODUCER_FLAG.get()) {
+                try {
+                    PRODUCER_FLAG.wait();
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }
+
+        System.out.println("Main: returns");
     }
 
     static class Consumer extends Thread {
@@ -46,6 +63,11 @@ public class VisibilityDemonstration {
                 }
             }
             System.out.println("Producer: terminating");
+
+            synchronized (PRODUCER_FLAG) {
+                PRODUCER_FLAG.set(true);
+                PRODUCER_FLAG.notifyAll();
+            }
         }
     }
 
