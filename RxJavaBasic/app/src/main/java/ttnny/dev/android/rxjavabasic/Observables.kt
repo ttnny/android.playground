@@ -7,6 +7,9 @@ import ttnny.dev.android.rxjavabasic.MainActivity.Companion.TAG
 import ttnny.dev.android.rxjavabasic.data.User
 import java.lang.Exception
 
+// Disposable
+lateinit var disposable: Disposable
+
 // Observable & Observer
 fun createObservable(): Observable<Int> {
     return Observable.create { emitter ->
@@ -27,6 +30,10 @@ fun createObservable(): Observable<Int> {
 fun observerObservable(): Observer<Int> {
     return object : Observer<Int> {
         override fun onSubscribe(d: Disposable?) {
+            d?.let { 
+                disposable = d
+            }
+
             Log.d(TAG, "onSubscribe")
         }
 
@@ -100,4 +107,44 @@ fun observerMaybe(): MaybeObserver<List<User>> {
             Log.d(TAG, "onComplete")
         }
     }
+}
+
+// Completable & CompletableObserver
+fun createCompletable(): Completable {
+    return Completable.create { emitter ->
+        try {
+            if (!emitter.isDisposed) {
+                Log.d(TAG, "Do something...")
+                emitter.onComplete()
+            }
+        } catch (e: Exception) {
+            emitter.onError(e)
+        }
+    }
+}
+
+fun observerCompletable(): CompletableObserver {
+    return object : CompletableObserver {
+        override fun onSubscribe(d: Disposable?) {
+            Log.d(TAG, "onSubscribe")
+        }
+
+        override fun onComplete() {
+            Log.d(TAG, "onComplete")
+        }
+
+        override fun onError(e: Throwable?) {
+            Log.d(TAG, "onError")
+        }
+
+    }
+}
+
+// Flowable & Observer
+fun createFlowable1(): Flowable<Int> {
+    return Flowable.range(1, 100)
+}
+
+fun createFlowable2(): Observable<Int> {
+    return Observable.range(1, 10)
 }
