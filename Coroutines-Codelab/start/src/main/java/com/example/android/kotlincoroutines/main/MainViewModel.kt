@@ -19,9 +19,11 @@ package com.example.android.kotlincoroutines.main
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.android.kotlincoroutines.util.BACKGROUND
 import com.example.android.kotlincoroutines.util.singleArgViewModelFactory
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * MainViewModel designed to store and manage UI-related data in a lifecycle conscious way. This
@@ -101,16 +103,18 @@ class MainViewModel(private val repository: TitleRepository) : ViewModel() {
     /**
      * Wait one second then update the tap count.
      */
-    private suspend fun updateTaps() {
+    private fun updateTaps() {
         // Launch a coroutine in viewModelScope
-        tapCount++
+        viewModelScope.launch {
+            tapCount++
 
-        // Suspend this coroutine for one second
-        delay(1000)
+            // Suspend this coroutine for one second
+            delay(1000)
 
-        // Resume in the main dispatcher
-        // _snackbar.value can be called directly from main thread
-        _taps.postValue("$tapCount taps")
+            // Resume in the main dispatcher
+            // _snackbar.value can be called directly from main thread
+            _taps.postValue("$tapCount taps")
+        }
     }
 
     /**
