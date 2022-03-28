@@ -17,11 +17,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Register the receiver to receive the filtered system broadcasts.
         val filter = IntentFilter()
         filter.addAction(Intent.ACTION_POWER_DISCONNECTED)
         filter.addAction(Intent.ACTION_POWER_CONNECTED)
         this.registerReceiver(mReceiver, filter)
 
+        // Register the receiver to receive the custom broadcasts.
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, IntentFilter(ACTION_CUSTOM_BROADCAST))
     }
 
@@ -31,8 +33,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        // Because the receiver is registered dynamically, remember to destroy when it's no longer needed.
         this.unregisterReceiver(mReceiver)
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver)
+
         super.onDestroy()
     }
 
