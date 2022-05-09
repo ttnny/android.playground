@@ -5,15 +5,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import com.techyourchance.multithreading.R;
 import com.techyourchance.multithreading.common.BaseFragment;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Exercise2Fragment extends BaseFragment {
 
@@ -22,6 +22,7 @@ public class Exercise2Fragment extends BaseFragment {
     }
 
     private byte[] mDummyData;
+    private final AtomicBoolean mCountAbort = new AtomicBoolean(false);
 
     @Nullable
     @Override
@@ -39,6 +40,7 @@ public class Exercise2Fragment extends BaseFragment {
     @Override
     public void onStop() {
         super.onStop();
+        mCountAbort.set(true);
     }
 
     @Override
@@ -47,19 +49,21 @@ public class Exercise2Fragment extends BaseFragment {
     }
 
     private void countScreenTime() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int screenTimeSeconds = 0;
-                while (true) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                    screenTimeSeconds++;
-                    Log.d("Exercise 2", "screen time: " + screenTimeSeconds + "s");
+        mCountAbort.set(false);
+
+        new Thread(() -> {
+            int screenTimeSeconds = 0;
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    return;
                 }
+                if (mCountAbort.get()) {
+                    return;
+                }
+                screenTimeSeconds++;
+                Log.d("Exercise 2", "screen time: " + screenTimeSeconds + "s");
             }
         }).start();
     }
