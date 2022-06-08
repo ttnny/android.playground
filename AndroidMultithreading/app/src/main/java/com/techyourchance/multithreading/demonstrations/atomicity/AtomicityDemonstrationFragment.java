@@ -87,12 +87,9 @@ public class AtomicityDemonstrationFragment extends BaseFragment {
     }
 
     private void startCountThread() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < COUNT_UP_TO; i++) {
-                    mCount++;
-                }
+        new Thread(() -> {
+            for (int i = 0; i < COUNT_UP_TO; i++) {
+                mCount++;
             }
         }).start();
     }
