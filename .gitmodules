@@ -1,0 +1,3 @@
+[submodule "ComposeAndroidCodelabs"]
+	path = ComposeAndroidCodelabs
+	url = https://github.com/googlecodelabs/android-compose-codelabs.git
