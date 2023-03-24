@@ -1,10 +1,11 @@
 package com.example.background.workers
 
+import android.content.ContentValues.TAG
 import android.content.Context
+import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.example.background.OUTPUT_PATH
-import timber.log.Timber
 import java.io.File
 
 class CleanupWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
@@ -23,14 +24,14 @@ class CleanupWorker(context: Context, params: WorkerParameters) : Worker(context
                         val name = entry.name
                         if (name.isNotEmpty() && name.endsWith(".png")) {
                             val deleted = entry.delete()
-                            Timber.i("Deleted $name - $deleted")
+                            Log.i(TAG, "Deleted $name - $deleted")
                         }
                     }
                 }
             }
             Result.success()
         } catch (exception: Exception) {
-            Timber.e(exception)
+            Log.e(TAG, exception.message, exception)
             Result.failure()
         }
     }
